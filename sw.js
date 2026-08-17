@@ -1,5 +1,5 @@
 // Minimal service worker for offline shell
-const CACHE = "detail-v1";
+const CACHE = "detail-v10-sync";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./app.js",
   "./data.js",
   "./crypto.js",
+  "./sync.js",
   "./manifest.json"
 ];
 

@@ -303,10 +303,42 @@ function createMission() {
 function joinMissionPrompt() {
   const code = (prompt("Enter mission code:") || "").trim().toUpperCase();
   if (!code) return;
-  const m = missions.find(x => (x.code || "").toUpperCase() === code);
+  let m = missions.find(x => (x.code || "").toUpperCase() === code);
   if (!m) {
-    alert("No mission with that code on this device yet.\n\nWhen multi-device sync is live, join will pull from the server.\nFor now, create on one device or import the same mission data.");
-    return;
+    // Cross-device join: create a local shell for this code and attach to sync channel
+    if (!isSyncConfigured()) {
+      alert("No mission with that code on this device.\n\nTurn on Sync in Settings (Supabase URL + key) on both devices, then join with the code.");
+      return;
+    }
+    const id = "msn_join_" + code + "_" + Date.now();
+    m = {
+      id,
+      code,
+      type: "movement",
+      title: "Mission " + code,
+      created: Date.now(),
+      updated: Date.now(),
+      status: "in_progress",
+      phaseIndex: 0,
+      teams: ["TEAM1", "TEAM2"],
+      checks: {},
+      reports: [],
+      photos: [],
+      paperwork: [],
+      marks: [],
+      joinedRemote: true
+    };
+    Object.keys(ROLE_CHECKLISTS).forEach(role => {
+      m.checks[role] = {};
+      Object.keys(ROLE_CHECKLISTS[role]).forEach(phaseId => {
+        m.checks[role][phaseId] = {};
+        ROLE_CHECKLISTS[role][phaseId].forEach(item => {
+          m.checks[role][phaseId][item.id] = { checked: false };
+        });
+      });
+    });
+    missions.push(m);
+    saveMissions();
   }
   joinTargetId = m.id;
   currentMission = m;
@@ -1346,12 +1378,15 @@ function saveSyncSettingsFromForm() {
 
 function clearSyncSettings() {
   saveSyncConfig({ url: "", key: "" });
-  leaveSyncChannel();
-  supabaseClient = null;
-  syncReady = false;
-  document.getElementById("sync-url-input").value = "";
-  document.getElementById("sync-key-input").value = "";
-  document.getElementById("sync-settings-status").textContent = "Sync cleared — local only.";
+  if (typeof leaveSyncChannel === "function") leaveSyncChannel();
+  if (typeof supabaseClient !== "undefined") supabaseClient = null;
+  if (typeof syncReady !== "undefined") syncReady = false;
+  const u = document.getElementById("sync-url-input");
+  const k = document.getElementById("sync-key-input");
+  const s = document.getElementById("sync-settings-status");
+  if (u) u.value = "";
+  if (k) k.value = "";
+  if (s) s.textContent = "Sync cleared — local only.";
   updateHubStatus();
 }
 
