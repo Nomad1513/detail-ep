@@ -119,6 +119,31 @@
       <main class="report-main" id="form-content"></main>
     </div>
 
+    <div id="settings-screen" class="screen">
+      <header class="top-bar">
+        <button id="home-from-settings" class="icon-btn">⌂</button>
+        <div class="title">SETTINGS</div>
+        <span style="width:40px"></span>
+      </header>
+      <main class="report-main" id="settings-content">
+        <div class="report-section">
+          <h3>Multi-device sync (Supabase)</h3>
+          <p class="subtitle">Paste URL and anon key. You can leave this page open while you copy from Supabase.</p>
+          <div class="form-field">
+            <div class="form-label">Project URL</div>
+            <input class="form-input" id="sync-url-input" type="text" placeholder="https://xxxx.supabase.co" autocomplete="off" />
+          </div>
+          <div class="form-field">
+            <div class="form-label">Anon / public key</div>
+            <textarea class="form-input form-textarea" id="sync-key-input" rows="4" placeholder="eyJ... or sb_publishable_..." autocomplete="off"></textarea>
+          </div>
+          <button class="btn primary full" id="sync-save-btn" type="button">SAVE SYNC SETTINGS</button>
+          <button class="btn secondary full" id="sync-clear-btn" type="button" style="margin-top:0.5rem">CLEAR (local only)</button>
+          <p class="subtitle" id="sync-settings-status" style="margin-top:1rem"></p>
+        </div>
+      </main>
+    </div>
+
     <div id="chat-screen" class="screen">
       <header class="top-bar">
         <button id="home-from-chat" class="icon-btn">⌂</button>

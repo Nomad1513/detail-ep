@@ -1321,16 +1321,38 @@ function importRecordsFile(file) {
 
 function openSyncSettings() {
   const cfg = loadSyncConfig();
-  const url = prompt("Supabase Project URL\n(Leave blank to stay local-only)", cfg.url || "");
-  if (url === null) return;
-  const key = prompt("Supabase anon/public key\n(Leave blank to clear sync)", cfg.key || "");
-  if (key === null) return;
-  saveSyncConfig({ url: (url || "").trim(), key: (key || "").trim() });
+  const urlEl = document.getElementById("sync-url-input");
+  const keyEl = document.getElementById("sync-key-input");
+  const st = document.getElementById("sync-settings-status");
+  if (urlEl) urlEl.value = cfg.url || "";
+  if (keyEl) keyEl.value = cfg.key || "";
+  if (st) st.textContent = typeof syncStatusText === "function" ? syncStatusText() : "";
+  showScreen("settings-screen");
+}
+
+function saveSyncSettingsFromForm() {
+  const url = (document.getElementById("sync-url-input").value || "").trim();
+  const key = (document.getElementById("sync-key-input").value || "").trim();
+  saveSyncConfig({ url, key });
   initSync().then(ok => {
-    alert(ok ? "Sync ON — join a mission to go live." : "Sync OFF — local only.\nCheck URL/key if you expected ON.");
-    if (currentMission) joinMissionSync(currentMission);
+    const st = document.getElementById("sync-settings-status");
+    if (st) st.textContent = ok
+      ? "Sync ON — create/join a mission to go live."
+      : "Sync OFF — local only. Check URL and anon key.";
+    if (ok && currentMission) joinMissionSync(currentMission);
     updateHubStatus();
   });
+}
+
+function clearSyncSettings() {
+  saveSyncConfig({ url: "", key: "" });
+  leaveSyncChannel();
+  supabaseClient = null;
+  syncReady = false;
+  document.getElementById("sync-url-input").value = "";
+  document.getElementById("sync-key-input").value = "";
+  document.getElementById("sync-settings-status").textContent = "Sync cleared — local only.";
+  updateHubStatus();
 }
 
 // Boot
@@ -1357,7 +1379,7 @@ document.querySelectorAll("[data-hub]").forEach(btn => {
   });
 });
 
-["home-from-missions","home-from-role","home-from-mission","home-from-log","home-from-photos","home-from-files","home-from-chat","home-from-gps","home-from-report"].forEach(id => {
+["home-from-missions","home-from-role","home-from-mission","home-from-log","home-from-photos","home-from-files","home-from-chat","home-from-gps","home-from-report","home-from-settings"].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener("click", goHome);
 });
@@ -1415,5 +1437,10 @@ const lb = document.getElementById("photo-lightbox");
 if (lb) lb.addEventListener("click", (e) => {
   if (e.target === lb) lb.style.display = "none";
 });
+
+const syncSave = document.getElementById("sync-save-btn");
+if (syncSave) syncSave.addEventListener("click", saveSyncSettingsFromForm);
+const syncClear = document.getElementById("sync-clear-btn");
+if (syncClear) syncClear.addEventListener("click", clearSyncSettings);
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
