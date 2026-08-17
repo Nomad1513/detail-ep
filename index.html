@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>DETAIL — EP Operations</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="home-screen" class="screen active">
+      <header class="top-bar">
+        <div class="logo-small">DETAIL</div>
+        <button id="menu-btn-home" class="icon-btn hamburger" aria-label="Menu">☰</button>
+      </header>
+      <main class="home-main">
+        <div class="hub-status" id="hub-status"></div>
+        <div class="hub-grid">
+          <button class="hub-tile" data-hub="missions" type="button"><span class="hub-icon">📋</span><span class="hub-label">MISSIONS</span></button>
+          <button class="hub-tile" data-hub="chat" type="button"><span class="hub-icon">💬</span><span class="hub-label">CHAT</span></button>
+          <button class="hub-tile" data-hub="camera" type="button"><span class="hub-icon">📷</span><span class="hub-label">CAMERA</span></button>
+          <button class="hub-tile" data-hub="photos" type="button"><span class="hub-icon">🖼️</span><span class="hub-label">PHOTOS</span></button>
+          <button class="hub-tile" data-hub="files" type="button"><span class="hub-icon">📄</span><span class="hub-label">FILES</span></button>
+          <button class="hub-tile" data-hub="gps" type="button"><span class="hub-icon">📍</span><span class="hub-label">GPS / MAP</span></button>
+        </div>
+      </main>
+    </div>
+
+    <div id="missions-screen" class="screen">
+      <header class="top-bar">
+        <button id="home-from-missions" class="icon-btn" title="Home">⌂</button>
+        <div class="title">MISSIONS</div>
+        <button id="menu-btn-missions" class="icon-btn hamburger">☰</button>
+      </header>
+      <main class="home-main">
+        <div class="mission-list" id="mission-list"></div>
+        <button id="new-mission-btn" class="btn primary full">+ CREATE MISSION</button>
+        <button id="join-mission-btn" class="btn secondary full" style="margin-top:0.6rem">JOIN MISSION</button>
+        <button id="export-all-btn" class="btn secondary full" style="margin-top:0.6rem">EXPORT ALL RECORDS</button>
+        <button id="import-records-btn" class="btn secondary full" style="margin-top:0.6rem">IMPORT RECORDS</button>
+        <button id="clear-all-missions-btn" class="btn secondary full" style="margin-top:0.6rem;opacity:0.7">CLEAR ALL MISSIONS</button>
+      </main>
+    </div>
+
+    <div id="role-screen" class="screen">
+      <header class="top-bar">
+        <button id="home-from-role" class="icon-btn">⌂</button>
+        <div class="title">JOIN AS</div>
+        <button id="menu-btn-role" class="icon-btn hamburger">☰</button>
+      </header>
+      <main class="home-main">
+        <p class="subtitle" id="join-mission-label">Select team and role</p>
+        <div class="section-label">TEAM</div>
+        <div class="team-row" id="team-row"></div>
+        <div class="section-label">ROLE</div>
+        <div class="role-grid" id="role-grid"></div>
+      </main>
+    </div>
+
+    <div id="mission-screen" class="screen">
+      <header class="top-bar">
+        <button id="home-from-mission" class="icon-btn" title="Home">⌂</button>
+        <div class="title" id="mission-title">MISSION</div>
+        <div class="top-actions">
+          <button id="log-btn" class="icon-btn" title="Log">📋</button>
+          <button id="menu-btn-mission" class="icon-btn hamburger">☰</button>
+        </div>
+      </header>
+      <div class="mission-meta-bar" id="mission-meta-bar"></div>
+      <div class="phase-bar" id="phase-bar"></div>
+      <main class="workflow-main" id="mission-content"></main>
+      <div class="timeline-fixed" id="timeline-fixed"></div>
+      <footer class="workflow-footer">
+        <button id="prev-phase-btn" class="btn secondary" disabled>PREV</button>
+        <button id="next-phase-btn" class="btn primary">NEXT PHASE</button>
+      </footer>
+    </div>
+
+    <div id="log-screen" class="screen">
+      <header class="top-bar">
+        <button id="back-from-log-btn" class="icon-btn">←</button>
+        <div class="title">MISSION LOG</div>
+        <div class="top-actions">
+          <button id="home-from-log" class="icon-btn">⌂</button>
+          <button id="export-from-log-btn" class="icon-btn">↗</button>
+        </div>
+      </header>
+      <main class="report-main" id="live-log-content"></main>
+    </div>
+
+    <div id="photos-screen" class="screen">
+      <header class="top-bar">
+        <button id="home-from-photos" class="icon-btn">⌂</button>
+        <div class="title">PHOTOS</div>
+        <button id="photo-capture-btn" class="icon-btn" title="Camera">📷</button>
+      </header>
+      <main class="report-main" id="photos-content"></main>
+    </div>
+
+    <div id="files-screen" class="screen">
+      <header class="top-bar">
+        <button id="home-from-files" class="icon-btn">⌂</button>
+        <div class="title">FILES</div>
+        <button id="paperwork-upload-btn" class="icon-btn" title="Add to library">+</button>
+      </header>
+      <main class="report-main" id="files-content"></main>
+    </div>
+
+    <div id="form-screen" class="screen">
+      <header class="top-bar">
+        <button id="back-from-form-btn" class="icon-btn">←</button>
+        <div class="title" id="form-title">FORM</div>
+        <button id="save-form-btn" class="icon-btn" title="Save">✓</button>
+      </header>
+      <main class="report-main" id="form-content"></main>
+    </div>
+
+    <div id="chat-screen" class="screen">
+      <header class="top-bar">
+        <button id="home-from-chat" class="icon-btn">⌂</button>
+        <div class="title">CHAT</div>
+        <span></span>
+      </header>
+      <main class="home-main">
+        <div class="empty-state">Mission chat coming next.<br>Primary remains Signal for now.</div>
+      </main>
+    </div>
+
+    <div id="gps-screen" class="screen">
+      <header class="top-bar">
+        <button id="home-from-gps" class="icon-btn">⌂</button>
+        <div class="title">GPS / MAP</div>
+        <span></span>
+      </header>
+      <main class="report-main" id="gps-content"></main>
+    </div>
+
+    <div id="report-screen" class="screen">
+      <header class="top-bar">
+        <button id="back-from-report-btn" class="icon-btn">←</button>
+        <div class="title">MISSION LOG</div>
+        <div class="top-actions">
+          <button id="home-from-report" class="icon-btn">⌂</button>
+          <button id="export-btn" class="icon-btn">↗</button>
+        </div>
+      </header>
+      <main class="report-main" id="report-content"></main>
+    </div>
+
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" />
+    <input type="file" id="import-input" accept="application/json,.json" style="display:none" />
+    <input type="file" id="paperwork-input" accept="image/*,application/pdf" style="display:none" />
+  </div>
+  <script src="crypto.js"></script>
+  <button id="fab-log-btn" class="fab-log" type="button" title="Mission Log" style="display:none">📋</button>
+  <div id="photo-lightbox" class="lightbox" style="display:none">
+    <button type="button" class="lightbox-close" id="lightbox-close">✕</button>
+    <img id="lightbox-img" alt="" />
+    <div id="lightbox-meta" class="lightbox-meta"></div>
+  </div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
