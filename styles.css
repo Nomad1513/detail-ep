@@ -1594,3 +1594,10 @@ html, body {
   border: 1px solid #3b82f6;
   background: #0c1524;
 }
+
+.hub-sync {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 0.35rem;
+  letter-spacing: 0.02em;
+}

@@ -142,8 +142,8 @@ function openAppMenu() {
       else if (a === "export") exportAllRecords();
       else if (a === "import") document.getElementById("import-input").click();
       else if (a === "sops") alert("SOPs library — next.");
-      else if (a === "settings") alert("Settings — later.\nSecure server backup will live here.");
-      else if (a === "about") alert("DETAIL v0.9\nForms + export/import for records.");
+      else if (a === "settings") openSyncSettings();
+      else if (a === "about") alert("THE DETAIL\nEP operations · multi-device sync when configured.");
     });
   });
 }
@@ -151,13 +151,19 @@ function openAppMenu() {
 function updateHubStatus() {
   const el = document.getElementById("hub-status");
   if (!el) return;
+  const syncLine = `<div class="hub-sync">${typeof syncStatusText === "function" ? syncStatusText() : ""}</div>`;
   if (currentMission && currentRole) {
     el.innerHTML = `<div class="hub-active">ACTIVE: <strong>${currentMission.code || "—"}</strong> · ${currentTeam} · <span style="color:${ROLES[currentRole].color}">${ROLES[currentRole].name}</span>
-      <button class="btn secondary hub-resume" id="resume-mission-btn" type="button">RESUME</button></div>`;
+      <button class="btn secondary hub-resume" id="resume-mission-btn" type="button">RESUME</button></div>${syncLine}`;
     const r = document.getElementById("resume-mission-btn");
     if (r) r.addEventListener("click", () => { showScreen("mission-screen"); renderMissionPhase(); });
+  } else if (currentMission) {
+    el.innerHTML = `<div class="hub-active">Mission <strong>${currentMission.code || "—"}</strong> — pick role
+      <button class="btn secondary hub-resume" id="pick-role-btn" type="button">SELECT ROLE</button></div>${syncLine}`;
+    const b = document.getElementById("pick-role-btn");
+    if (b) b.addEventListener("click", openRoleSelect);
   } else {
-    el.innerHTML = `<p class="subtitle" style="margin:0">Select a module</p>`;
+    el.innerHTML = `<div class="hub-idle">No active mission</div>${syncLine}`;
   }
 }
 
@@ -345,6 +351,8 @@ async function logEvent(label, extra, opts) {
   currentMission.updated = Date.now();
   syncMissionToList();
   saveMissions();
+  if (typeof seenEventKeys !== "undefined") seenEventKeys.add(eventKey(entry));
+  if (typeof publishLog === "function") publishLog(entry);
 
   showLogToast(label, currentRole);
 
@@ -358,7 +366,7 @@ async function logEvent(label, extra, opts) {
       entry.lat = pos.lat;
       entry.lon = pos.lon;
       if (pos.acc != null) entry.acc = pos.acc;
-      currentMission.marks.push({
+      const mark = {
         time: entry.time,
         role: currentRole,
         team: currentTeam,
@@ -368,11 +376,12 @@ async function logEvent(label, extra, opts) {
         lat: pos.lat,
         lon: pos.lon,
         acc: pos.acc || null
-      });
+      };
+      currentMission.marks.push(mark);
       currentMission.updated = Date.now();
       syncMissionToList();
       saveMissions();
-      toast.textContent = "LOGGED + MARKED: " + label;
+      if (typeof publishMark === "function") publishMark(mark);
     }
   }
 }
@@ -1310,9 +1319,24 @@ function importRecordsFile(file) {
   reader.readAsText(file);
 }
 
+function openSyncSettings() {
+  const cfg = loadSyncConfig();
+  const url = prompt("Supabase Project URL\n(Leave blank to stay local-only)", cfg.url || "");
+  if (url === null) return;
+  const key = prompt("Supabase anon/public key\n(Leave blank to clear sync)", cfg.key || "");
+  if (key === null) return;
+  saveSyncConfig({ url: (url || "").trim(), key: (key || "").trim() });
+  initSync().then(ok => {
+    alert(ok ? "Sync ON — join a mission to go live." : "Sync OFF — local only.\nCheck URL/key if you expected ON.");
+    if (currentMission) joinMissionSync(currentMission);
+    updateHubStatus();
+  });
+}
+
 // Boot
 loadMissions();
 ensureBuiltinForms();
+initSync().then(() => updateHubStatus());
 currentRole = localStorage.getItem("detail_role");
 currentTeam = localStorage.getItem("detail_team") || "TEAM1";
 updateHubStatus();
