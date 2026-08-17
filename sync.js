@@ -84,7 +84,12 @@ async function pullEvents(code) {
       .order("id", { ascending: true })
       .limit(100);
     if (error) {
-      console.warn("pullEvents", error.message);
+      console.warn("pullEvents", error);
+      // surface once-ish on pull failures
+      if (!window.__detailPullErrShown) {
+        window.__detailPullErrShown = true;
+        showLogToast("SYNC READ: " + (error.message || "fail").slice(0, 70), currentRole || "SL");
+      }
       return;
     }
     (data || []).forEach(row => {
@@ -160,8 +165,9 @@ async function publishPayload(payload) {
       payload
     });
     if (error) {
-      console.warn("publish error", error.message);
-      showLogToast("SYNC SEND FAIL — check table setup", currentRole || "SL");
+      console.warn("publish error", error);
+      const msg = (error.message || "send fail").slice(0, 80);
+      showLogToast("SYNC ERR: " + msg, currentRole || "SL");
       return false;
     }
     return true;
