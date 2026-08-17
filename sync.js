@@ -1,10 +1,8 @@
-// DETAIL multi-device sync — Supabase Realtime Broadcast (optional)
-// Without config, app stays local-only. With URL + anon key, devices share a mission by code.
-
+// DETAIL multi-device sync — Supabase Realtime Broadcast
 let supabaseClient = null;
 let syncChannel = null;
 let syncReady = false;
-let lastPush = 0;
+let syncSubscribed = false;
 const seenEventKeys = new Set();
 
 function loadSyncConfig() {
@@ -29,12 +27,13 @@ function eventKey(e) {
 }
 
 async function initSync() {
+  syncReady = false;
+  syncSubscribed = false;
   if (!isSyncConfigured()) {
     supabaseClient = null;
-    syncReady = false;
     return false;
   }
-  if (typeof window.supabase === "undefined") {
+  if (typeof window.supabase === "undefined" || !window.supabase.createClient) {
     console.warn("Supabase SDK not loaded");
     return false;
   }
@@ -53,19 +52,23 @@ async function initSync() {
 }
 
 function leaveSyncChannel() {
-  if (syncChannel) {
+  syncSubscribed = false;
+  if (syncChannel && supabaseClient) {
     try { supabaseClient.removeChannel(syncChannel); } catch (e) {}
-    syncChannel = null;
   }
+  syncChannel = null;
 }
 
 async function joinMissionSync(mission) {
   leaveSyncChannel();
-  if (!syncReady || !supabaseClient || !mission || !mission.code) return;
+  if (!syncReady || !supabaseClient || !mission || !mission.code) {
+    if (typeof updateHubStatus === "function") updateHubStatus();
+    return;
+  }
 
   const topic = "detail-mission-" + String(mission.code).toUpperCase();
   syncChannel = supabaseClient.channel(topic, {
-    config: { broadcast: { self: false } }
+    config: { broadcast: { self: false, ack: true } }
   });
 
   syncChannel
@@ -75,16 +78,16 @@ async function joinMissionSync(mission) {
     .on("broadcast", { event: "mark" }, ({ payload }) => {
       applyRemoteMark(payload);
     })
-    .on("broadcast", { event: "phase" }, ({ payload }) => {
-      applyRemotePhase(payload);
-    })
     .on("broadcast", { event: "hello" }, ({ payload }) => {
       if (payload && payload.role) {
         showLogToast("ONLINE: " + (payload.role || "?") + " · " + (payload.team || ""), payload.role);
       }
     })
-    .subscribe(async (status) => {
+    .subscribe((status) => {
+      syncSubscribed = (status === "SUBSCRIBED");
+      if (typeof updateHubStatus === "function") updateHubStatus();
       if (status === "SUBSCRIBED") {
+        showLogToast("SYNC CONNECTED", currentRole || "SL");
         syncChannel.send({
           type: "broadcast",
           event: "hello",
@@ -94,6 +97,8 @@ async function joinMissionSync(mission) {
             time: Date.now()
           }
         });
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        showLogToast("SYNC ERROR: " + status, currentRole || "SL");
       }
     });
 }
@@ -105,7 +110,6 @@ function applyRemoteLog(entry) {
   seenEventKeys.add(key);
 
   ensureMissionArrays(currentMission);
-  // Don't re-apply our own echo if any
   const dup = currentMission.reports.some(
     r => r.time === entry.time && r.label === entry.label && r.role === entry.role
   );
@@ -116,6 +120,11 @@ function applyRemoteLog(entry) {
   syncMissionToList();
   saveMissions();
   showLogToast(entry.label, entry.role);
+  // Refresh log if open
+  const logEl = document.getElementById("live-log-content");
+  if (logEl && document.getElementById("log-screen") && document.getElementById("log-screen").classList.contains("active")) {
+    if (typeof showLiveLog === "function") showLiveLog();
+  }
 }
 
 function applyRemoteMark(mark) {
@@ -131,27 +140,27 @@ function applyRemoteMark(mark) {
   saveMissions();
 }
 
-function applyRemotePhase(payload) {
-  // informational only for now — each role owns their checklist locally
-  if (!payload) return;
-}
-
 async function publishLog(entry) {
-  if (!syncChannel || !entry) return;
+  if (!entry) return;
   seenEventKeys.add(eventKey(entry));
+  if (!syncChannel || !syncSubscribed) {
+    console.warn("publishLog: not subscribed yet");
+    return;
+  }
   try {
-    await syncChannel.send({
+    const res = await syncChannel.send({
       type: "broadcast",
       event: "log",
       payload: entry
     });
+    if (res !== "ok") console.warn("publishLog result", res);
   } catch (e) {
     console.warn("publishLog failed", e);
   }
 }
 
 async function publishMark(mark) {
-  if (!syncChannel || !mark) return;
+  if (!mark || !syncChannel || !syncSubscribed) return;
   try {
     await syncChannel.send({
       type: "broadcast",
@@ -166,6 +175,7 @@ async function publishMark(mark) {
 function syncStatusText() {
   if (!isSyncConfigured()) return "Sync off — local only";
   if (!syncReady) return "Sync configured — connecting…";
-  if (syncChannel) return "Sync live · code " + (currentMission && currentMission.code ? currentMission.code : "—");
+  if (syncChannel && syncSubscribed) return "Sync live · code " + (currentMission && currentMission.code ? currentMission.code : "—");
+  if (syncChannel) return "Sync connecting… · code " + (currentMission && currentMission.code ? currentMission.code : "—");
   return "Sync ready — join a mission";
 }

@@ -259,6 +259,8 @@ function openRoleSelect() {
       currentPhaseIndex = currentMission.phaseIndex || 0;
       showScreen("mission-screen");
       renderMissionPhase();
+      if (typeof joinMissionSync === "function") joinMissionSync(currentMission);
+      updateHubStatus();
     });
   });
   showScreen("role-screen");
